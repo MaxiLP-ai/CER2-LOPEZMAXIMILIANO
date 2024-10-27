@@ -1,0 +1,174 @@
+{% load static %}
+{% load filtros %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda en Línea</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'vista_home' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="80" height="60" class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_home' %}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_catalogo' %}">Productos</a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        {% if es_vendedor or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_pedidos' %}">Pedidos</a>
+                            </li>
+                        {% endif %}
+                        {% if es_cliente or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_historial_pedidos' %}">Historial Pedidos</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>                
+            </div>
+            <div class="d-flex align-items-center" style="margin-left: auto;">
+                {% if request.user.is_authenticated %}
+                    {% if es_cliente or es_superadmin %}
+                    <a href="{% url 'vista_carrito' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        {% if carrito_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ carrito_count }}
+                                <span class="visually-hidden">Productos en el carrito</span>
+                            </span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        <span class="visually-hidden">Ir al carrito</span>
+                    </a>
+                {% endif %}
+                
+                {% if request.user.is_authenticated %}
+                    <div class="user-circle" data-bs-toggle="modal" data-bs-target="#userInfoModal" style="cursor: pointer;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary user-circle">
+                        <i class="bi bi-person"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Modal para mostrar la información del usuario -->
+    <div class="modal fade" id="userInfoModal" tabindex="-1" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userInfoModalLabel">Información del Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="userInfo">
+                    {% if request.user.is_authenticated %}
+                        <p><strong>Nombre:</strong> {{ request.user.username }}</p>
+                        <p><strong>Email:</strong> {{ request.user.email }}</p>
+                        <p><strong>Rol:</strong> 
+                            {% if es_cliente %}
+                                Cliente
+                            {% elif es_vendedor %}
+                                Vendedor
+                            {% elif es_superadmin %}
+                                Super Administrador
+                            {% else %}
+                                Sin Rol Asignado
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar Sesión</a>
+                    {% else %}
+                        <p>Usuario invitado</p>
+                        <a href="{% url 'vista_login' %}" class="btn btn-primary">Iniciar Sesión</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <h1>Carrito de Compras</h1>
+        {% if items %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.producto.nombre }}</td>
+                            <td>${{ item.producto.precio }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td>${{ item.cantidad|multiply:item.producto.precio }}</td>
+                            <td>
+                                <!-- Formulario para eliminar el producto -->
+                                <form action="{% url 'eliminar_producto_carrito' item.producto.id %}" method="POST" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h3>Total: ${{ total }}</h3>
+            <a href="{% url 'procesar_pedido' %}" class="btn btn-primary">Finalizar Compra</a>
+            <a href="{% url 'cancelar_compra' %}" class="btn btn-secondary">Cancelar Compra</a>
+        {% else %}
+            <p>Tu carrito está vacío.</p>
+            <a href="{% url 'vista_catalogo' %}" class="btn btn-primary">Volver a la Tienda</a>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+        <div class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3" role="alert">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3">
+            © 2024 Tienda Verde. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script> <!-- Bootstrap JS -->
+    <script>
+        function toggleUserInfo() {
+            const userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
+            userInfoModal.show();
+        }
+    </script>
+</body>
+</html>

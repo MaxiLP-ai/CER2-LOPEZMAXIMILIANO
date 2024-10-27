@@ -1,0 +1,168 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda en Línea</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'vista_home' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="80" height="60" class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_home' %}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_catalogo' %}">Productos</a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        {% if es_vendedor or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_pedidos' %}">Pedidos</a>
+                            </li>
+                        {% endif %}
+                        {% if es_cliente or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_historial_pedidos' %}">Historial Pedidos</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>                
+            </div>
+            <div class="d-flex align-items-center" style="margin-left: auto;">
+                {% if request.user.is_authenticated %}
+                    {% if es_cliente or es_superadmin %}
+                    <a href="{% url 'vista_carrito' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        {% if carrito_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ carrito_count }}
+                                <span class="visually-hidden">Productos en el carrito</span>
+                            </span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        <span class="visually-hidden">Ir al carrito</span>
+                    </a>
+                {% endif %}
+                
+                {% if request.user.is_authenticated %}
+                    <div class="user-circle" data-bs-toggle="modal" data-bs-target="#userInfoModal" style="cursor: pointer;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary user-circle">
+                        <i class="bi bi-person"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1>Bienvenido a nuestra tienda en línea</h1>
+        <p>Encuentra los mejores productos a precios increíbles.</p>
+    </div>
+
+    <!-- Carrusel de Productos Destacados -->
+    <div id="carouselExampleIndicators" class="carousel slide mt-5" data-bs-ride="carousel" data-bs-interval="6000">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="{% static 'img/slice1.png' %}" class="d-block w-100" alt="Imagen 1">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Tienda Sustentable</h5>
+                    <p>Somos una Tienda que vela por la sustentabilidad.</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'img/slice2.png' %}" class="d-block w-100" alt="Imagen 2">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Materiales Reciclados</h5>
+                    <p>Utilizamos en el 80% materiales reciclados.</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="{% static 'img/slice3.png' %}" class="d-block w-100" alt="Imagen 3">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Trabajadores Concientes</h5>
+                    <p>Capacitamos a nuestros Trabajadores para que generen conciencia sobre el cuidado de nuestro planeta.</p>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <!-- Sección de Opiniones de Clientes -->
+    <div class="container mt-5">
+        <h2>Opiniones de Nuestros Clientes</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <blockquote class="blockquote">
+                            <p>"¡Gran servicio y productos de alta calidad!."</p>
+                            <footer class="blockquote-footer">Ana G.</footer>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <blockquote class="blockquote">
+                            <p>"Las mejores ofertas que he encontrado online."</p>
+                            <footer class="blockquote-footer">Carlos M.</footer>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <blockquote class="blockquote">
+                            <p>"Entrega rápida y excelente atención al cliente."</p>
+                            <footer class="blockquote-footer">Laura P.</footer>
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3">
+            © 2024 Tienda Verde. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

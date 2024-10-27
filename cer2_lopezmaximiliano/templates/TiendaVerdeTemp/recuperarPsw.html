@@ -1,0 +1,43 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer Contraseña</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="d-flex align-items-center min-vh-100 bg-light">
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title text-center">Restablecer Contraseña</h4>
+                        <form method="POST" href="{% url 'vista_psw' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nombre de Usuario</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nueva_contrasena" class="form-label">Nueva Contraseña</label>
+                                <input type="password" class="form-control" id="nueva_contrasena" name="nueva_contrasena" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" href="{% url 'vista_login' %}">Restablecer Contraseña</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <p>¿Ya tienes cuenta? <a href="{% url 'vista_login' %}">Inicia Sesión aquí</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

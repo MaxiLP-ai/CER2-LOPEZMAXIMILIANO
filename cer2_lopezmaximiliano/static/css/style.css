@@ -1,0 +1,25 @@
+/* Estilo para el círculo de usuario */
+.user-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff; /* Color del círculo */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 10px; /* Espacio entre el círculo y el botón de carrito */
+    transition: background-color 0.3s; /* Transición suave para el color */
+}
+
+/* Espacio entre los botones */
+.btn-outline-secondary {
+    margin-left: 10px; /* Espacio entre el botón de carrito y el círculo de usuario */
+}
+
+.user-circle:hover {
+    background-color: #0056b3; /* Color al pasar el mouse */
+}
+
+/* Añadir más estilos si es necesario */

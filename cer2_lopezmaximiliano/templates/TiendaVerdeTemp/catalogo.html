@@ -1,0 +1,284 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda en Línea</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'vista_home' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="80" height="60" class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_home' %}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_catalogo' %}">Productos</a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        {% if es_vendedor or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_pedidos' %}">Pedidos</a>
+                            </li>
+                        {% endif %}
+                        {% if es_cliente or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_historial_pedidos' %}">Historial Pedidos</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>                
+            </div>
+            <div class="d-flex align-items-center" style="margin-left: auto;">
+                {% if request.user.is_authenticated %}
+                    {% if es_cliente or es_superadmin %}
+                    <a href="{% url 'vista_carrito' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        {% if carrito_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ carrito_count }}
+                                <span class="visually-hidden">Productos en el carrito</span>
+                            </span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        <span class="visually-hidden">Ir al carrito</span>
+                    </a>
+                {% endif %}
+                
+                {% if request.user.is_authenticated %}
+                    <div class="user-circle" data-bs-toggle="modal" data-bs-target="#userInfoModal" style="cursor: pointer;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary user-circle">
+                        <i class="bi bi-person"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Modal para mostrar la información del usuario -->
+    <div class="modal fade" id="userInfoModal" tabindex="-1" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userInfoModalLabel">Información del Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="userInfo">
+                    {% if request.user.is_authenticated %}
+                        <p><strong>Nombre:</strong> {{ request.user.username }}</p>
+                        <p><strong>Email:</strong> {{ request.user.email }}</p>
+                        <p><strong>Rol:</strong> 
+                            {% if es_cliente %}
+                                Cliente
+                            {% elif es_vendedor %}
+                                Vendedor
+                            {% elif es_superadmin %}
+                                Super Administrador
+                            {% else %}
+                                Sin Rol Asignado
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar Sesión</a>
+                    {% else %}
+                        <p>Usuario invitado</p>
+                        <a href="{% url 'vista_login' %}" class="btn btn-primary">Iniciar Sesión</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <h1 class="mb-4">Catálogo de Productos</h1>
+        <div class="row">
+            {% for producto in productos %}
+                <div class="col-md-4 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ producto.nombre }}</h5>
+                            <p class="card-text">{{ producto.descripcion }}</p>
+                            <p class="card-text"><strong>Precio: ${{ producto.precio }}</strong></p>
+                            <p class="card-text">
+                                {% if producto.stock == 0 %}
+                                    <span class="text-danger">No hay stock disponible</span>
+                                {% else %}
+                                    <span>Stock disponible: {{ producto.stock }}</span>
+                                {% endif %}
+                            </p>
+                            {% if request.user.is_authenticated %}
+                                {% if es_cliente or es_superadmin %}
+                                    <a href="{% url 'agregar_al_carrito' producto.id %}" class="btn btn-primary">
+                                        Añadir al carrito
+                                    </a>
+                                {% endif %}
+                                {% if es_vendedor or es_superadmin %}
+                                    <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editarProductoModal{{ producto.id }}">Editar</button>
+                                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ producto.id }}">Eliminar</button>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'vista_login' %}" class="btn btn-primary">
+                                    Añadir al carrito
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No hay productos disponibles.</p>
+            {% endfor %}
+            {% if es_vendedor or es_superadmin %}
+                <div class="col-md-4 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Agregar Producto</h5>
+                            <p class="card-text">Crea un nuevo producto para la tienda.</p>
+                            <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#agregarProductoModal">
+                                <i class="bi bi-plus-circle"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal para agregar un nuevo producto -->
+    <div class="modal fade" id="agregarProductoModal" tabindex="-1" aria-labelledby="agregarProductoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="agregarProductoModalLabel">Agregar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data" action="{% url 'agregar_producto' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="precio" class="form-label">Precio</label>
+                            <input type="number" class="form-control" id="precio" name="precio" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="stock" class="form-label">Stock</label>
+                            <input type="number" class="form-control" id="stock" name="stock" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label">Imagen</label>
+                            <input type="file" class="form-control" id="imagen" name="imagen" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Agregar Producto</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% for producto in productos %}
+        <!-- Modal para editar producto -->
+        <div class="modal fade" id="editarProductoModal{{ producto.id }}" tabindex="-1" aria-labelledby="editarProductoModalLabel{{ producto.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editarProductoModalLabel{{ producto.id }}">Editar Producto "{{ producto.nombre }}"</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST" enctype="multipart/form-data" action="{% url 'editar_producto' producto.id %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ producto.nombre }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="descripcion" name="descripcion" required>{{ producto.descripcion }}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="precio" class="form-label">Precio</label>
+                                <input type="number" class="form-control" id="precio" name="precio" step="0.01" value="{{ producto.precio }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="stock" class="form-label">Stock</label>
+                                <input type="number" class="form-control" id="stock" name="stock" value="{{ producto.stock }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="imagen" class="form-label">Imagen</label>
+                                <input type="file" class="form-control" id="imagen" name="imagen">
+                                <small class="form-text text-muted">Dejar en blanco si no desea cambiar la imagen.</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if request.user.is_authenticated %}
+            {% if es_superadmin %}
+            <!-- Modal de confirmación para eliminar producto -->
+            <div class="modal fade" id="confirmDeleteModal{{ producto.id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel{{ producto.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmDeleteModalLabel{{ producto.id }}">Confirmar Eliminación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            ¿Estás seguro de que deseas eliminar el producto "{{ producto.nombre }}" y todos sus archivos asociados?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <form action="{% url 'eliminar_producto' producto.id %}" method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3">
+            © 2024 Tienda Verde. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script> <!-- Bootstrap JS -->
+    <script>
+        function toggleUserInfo() {
+            const userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
+            userInfoModal.show();
+        }
+    </script>
+
+</body>
+</html>

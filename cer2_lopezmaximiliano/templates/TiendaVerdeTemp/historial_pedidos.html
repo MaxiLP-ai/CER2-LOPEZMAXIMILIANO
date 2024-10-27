@@ -1,0 +1,197 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Pedidos</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'vista_home' %}">
+                <img src="{% static 'img/logo.png' %}" alt="Logo" width="80" height="60" class="d-inline-block align-text-top">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_home' %}">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vista_catalogo' %}">Productos</a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        {% if es_vendedor or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_pedidos' %}">Pedidos</a>
+                            </li>
+                        {% endif %}
+                        {% if es_cliente or es_superadmin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'vista_historial_pedidos' %}">Historial Pedidos</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>                
+            </div>
+            <div class="d-flex align-items-center" style="margin-left: auto;">
+                {% if request.user.is_authenticated %}
+                    {% if es_cliente or es_superadmin %}
+                    <a href="{% url 'vista_carrito' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        {% if carrito_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ carrito_count }}
+                                <span class="visually-hidden">Productos en el carrito</span>
+                            </span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary me-3 position-relative">
+                        <i class="bi bi-cart"></i>
+                        <span class="visually-hidden">Ir al carrito</span>
+                    </a>
+                {% endif %}
+                
+                {% if request.user.is_authenticated %}
+                    <div class="user-circle" data-bs-toggle="modal" data-bs-target="#userInfoModal" style="cursor: pointer;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                {% else %}
+                    <a href="{% url 'vista_login' %}" class="btn btn-outline-secondary user-circle">
+                        <i class="bi bi-person"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-5">
+        {% if request.user.is_authenticated %}
+        {% if es_superadmin %}
+            <h1>Historial de Pedidos Super Administrador</h1>
+        {% else %}
+            {% if pedidos %}
+                <h1>Historial de Pedidos de {{ pedidos.0.cliente.usuario.username }}</h1>
+            {% else %}
+                <h1>No hay pedidos disponibles.</h1>
+            {% endif %}
+        {% endif %}
+        
+        {% if pedidos %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                            <tr>
+                                <td>{{ pedido.id }}</td>
+                                <td>{{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</td>
+                                <td>${{ pedido.total }}</td>
+                                <td>{{ pedido.estado }}</td>
+                                <td>
+                                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detalleModal{{ pedido.id }}">
+                                        Ver Detalles
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Modal para detalles del pedido -->
+                            <div class="modal fade" id="detalleModal{{ pedido.id }}" tabindex="-1" aria-labelledby="detalleModalLabel{{ pedido.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="detalleModalLabel{{ pedido.id }}">Detalles del Pedido #{{ pedido.id }} de {{ pedido.cliente.usuario.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <h5>Productos:</h5>
+                                            <ul>
+                                                {% for detalle in pedido.detalles.all %}
+                                                    <li>{{ detalle.producto.nombre }} - Cantidad: {{ detalle.cantidad }} - Precio: ${{ detalle.precio_unitario }}</li>
+                                                {% empty %}
+                                                    <li>No hay productos en este pedido.</li>
+                                                {% endfor %}
+                                            </ul>                                
+                                            <p><strong>Total: ${{ pedido.total }}</strong></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No hay pedidos disponibles.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>No tienes pedidos en tu historial.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Modal para mostrar la información del usuario -->
+    <div class="modal fade" id="userInfoModal" tabindex="-1" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userInfoModalLabel">Información del Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="userInfo">
+                    {% if request.user.is_authenticated %}
+                        <p><strong>Nombre:</strong> {{ request.user.username }}</p>
+                        <p><strong>Email:</strong> {{ request.user.email }}</p>
+                        <p><strong>Rol:</strong> 
+                            {% if es_cliente %}
+                                Cliente
+                            {% elif es_vendedor %}
+                                Vendedor
+                            {% elif es_superadmin %}
+                                Super Administrador
+                            {% else %}
+                                Sin Rol Asignado
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar Sesión</a>
+                    {% else %}
+                        <p>Usuario invitado</p>
+                        <a href="{% url 'vista_login' %}" class="btn btn-primary">Iniciar Sesión</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="bg-light text-center text-lg-start mt-5">
+        <div class="text-center p-3">
+            © 2024 Tienda Verde. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        function toggleUserInfo() {
+            const userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
+            userInfoModal.show();
+        }
+    </script>
+</body>
+</html>
